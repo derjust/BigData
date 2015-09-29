@@ -1,0 +1,172 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.sungard.advtech</groupId>
+	<artifactId>BigData</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>BigData</name>
+	<url>http://www.sungard.com/</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+
+		<gc.projectId>sungard-cat-demo</gc.projectId>
+		<gc.btClusterId>sept-poc</gc.btClusterId>
+		<gc.btZoneId>us-central1-b</gc.btZoneId>
+		<gc.stagingLocation>gs://sj_test</gc.stagingLocation>
+
+		<gc.isdHistory>gs://sj_test/isd-history.csv</gc.isdHistory>
+		<gc.btTable>weather</gc.btTable>
+		<gc.bqTable>sungard-cat-demo:dataflow_test.sjtestweather</gc.bqTable>
+
+		<gc.dfAutoscalingAlgorithm>THROUGHPUT_BASED</gc.dfAutoscalingAlgorithm>
+		<gc.numWorkers>3</gc.numWorkers>
+		<gc.workerMachineType>n1-standard-4</gc.workerMachineType>
+		<gc.workerDiskSize>10</gc.workerDiskSize>
+		<gc.zone>us-central1-b</gc.zone>
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>snapshots-repo</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.google.cloud.bigtable</groupId>
+			<artifactId>bigtable-hbase-dataflow</artifactId>
+			<version>0.2.2-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+			<version>1.3</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+
+	<profiles>
+		<!-- http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html#alpn-versions -->
+		<profile>
+			<id>1.7.0u40-1.7.0u67</id>
+			<activation>
+				<jdk>[1.7.0.40,1.7.0.67]</jdk>
+			</activation>
+			<properties>
+				<alpn.version>7.1.0.v20141016</alpn.version>
+			</properties>
+		</profile>
+		<profile>
+			<id>1.7.0u71-1.7.0u72</id>
+			<activation>
+				<jdk>[1.7.0.71,1.7.0.72]</jdk>
+			</activation>
+			<properties>
+				<alpn.version>7.1.2.v20141202</alpn.version>
+			</properties>
+		</profile>
+		<profile>
+			<id>1.7.0u75-1.7.0u80</id>
+			<activation>
+				<jdk>[1.7.0.75,1.7.0.80]</jdk>
+			</activation>
+			<properties>
+				<alpn.version>7.1.3.v20150130</alpn.version>
+			</properties>
+		</profile>
+		<profile>
+			<id>1.8.0-1.8.0u20</id>
+			<activation>
+				<jdk>[1.8.0.0,1.8.0.20]</jdk>
+			</activation>
+			<properties>
+				<alpn.version>8.1.0.v20141016</alpn.version>
+			</properties>
+		</profile>
+		<profile>
+			<id>1.8.0u25</id>
+			<activation>
+				<jdk>1.8.0.25</jdk>
+			</activation>
+			<properties>
+				<alpn.version>8.1.2.v20141202</alpn.version>
+			</properties>
+		</profile>
+		<profile>
+			<id>1.8.0u31-1.8.0u45</id>
+			<activation>
+				<jdk>[1.8.0.31,1.8.0.45]</jdk>
+			</activation>
+			<properties>
+				<alpn.version>8.1.3.v20150130</alpn.version>
+			</properties>
+		</profile>
+		<profile>
+			<id>1.8.0u51</id>
+			<activation>
+				<jdk>1.8.0.51</jdk>
+			</activation>
+			<properties>
+				<alpn.version>8.1.4.v20150727</alpn.version>
+			</properties>
+		</profile>
+	</profiles>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<configuration>
+					<executable>java</executable>
+					<arguments>
+						<argument>-Xbootclasspath/p:${settings.localRepository}/org/mortbay/jetty/alpn/alpn-boot/${alpn.version}/alpn-boot-${alpn.version}.jar</argument>
+						<argument>-classpath</argument>
+						<classpath />
+						<argument>com.sungard.advtech.CloudyWithMeatballs</argument>
+						<argument>--runner=BlockingDataflowPipelineRunner</argument>
+						<argument>--project=${gc.projectId}</argument>
+						<argument>--stagingLocation=${gc.stagingLocation}</argument>
+
+						<argument>--bigtableProjectId=${gc.projectId}</argument>
+						<argument>--bigtableClusterId=${gc.btClusterId}</argument>
+						<argument>--bigtableZoneId=${gc.btZoneId}</argument>
+
+						<argument>--isdHistory=${gc.isdHistory}</argument>
+						<argument>--bigtableTableId=${gc.btTable}</argument>
+						<argument>--bigQueryTable=${gc.bqTable}</argument>
+
+						<argument>--autoscalingAlgorithm=${gc.dfAutoscalingAlgorithm}</argument>
+						<argument>--numWorkers=${gc.numWorkers}</argument>
+						<!-- There is a bug in DataFlow. We have to set 500 to imply "unbound" -->
+						<argument>--maxNumWorkers=500</argument>
+						<argument>--workerMachineType=${gc.workerMachineType}</argument>
+						<argument>--diskSizeGb=${gc.workerDiskSize}</argument>
+					</arguments>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
