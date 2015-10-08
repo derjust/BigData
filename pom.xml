@@ -15,14 +15,14 @@
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
 
-		<gc.projectId>sungard-cat-demo</gc.projectId>
-		<gc.btClusterId>sept-poc</gc.btClusterId>
-		<gc.btZoneId>us-central1-b</gc.btZoneId>
-		<gc.stagingLocation>gs://sj_test</gc.stagingLocation>
+		<gc.projectId>GOOGLE PROJECT ID</gc.projectId>
+		<gc.btClusterId>BIGTABLE CLUSTER ID</gc.btClusterId>
+		<gc.btZoneId>ZONER OF BIGTABLE CLUSTER</gc.btZoneId>
+		<gc.stagingLocation>gs://STAGINGBUCKET</gc.stagingLocation>
 
-		<gc.isdHistory>gs://sj_test/isd-history.csv</gc.isdHistory>
+		<gc.isdHistory>gs://BUCKET/isd-history.csv</gc.isdHistory>
 		<gc.btTable>weather</gc.btTable>
-		<gc.bqTable>sungard-cat-demo:dataflow_test.sjtestweather</gc.bqTable>
+		<gc.bqTable>GOOGLE PROJECT ID:CLOUDY.WEATHEROUTPUT</gc.bqTable>
 
 		<gc.dfAutoscalingAlgorithm>THROUGHPUT_BASED</gc.dfAutoscalingAlgorithm>
 		<gc.numWorkers>3</gc.numWorkers>
@@ -33,6 +33,7 @@
 
 	<repositories>
 		<repository>
+			<!-- Bigtable-Dataflow SNAPSHOT connector -->
 			<id>snapshots-repo</id>
 			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 			<releases>

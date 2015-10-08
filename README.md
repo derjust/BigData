@@ -3,7 +3,7 @@
 
 
 - [Going Big](#going-big)
-  - [Processing Big Data with Bigtable, DataFlow and BigQuery](#processing-big-data-with-bigtable-dataflow-and-bigquery)
+  - [Processing Big Data with Bigtable, Dataflow and BigQuery](#processing-big-data-with-bigtable-dataflow-and-bigquery)
   - [The flow](#the-flow)
   - [Basic setup](#basic-setup)
   - [Brining in the big guns](#brining-in-the-big-guns)
@@ -22,69 +22,68 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Going Big
-## Processing Big Data with Bigtable, DataFlow and BigQuery
+## Processing Big Data with Bigtable, Dataflow and BigQuery
 
-With the release of Bigtable, Google enriches its suite of tools to process data on a massive scale.
+With the release of Bigtable, Google has enriched its tools suite to process data on a massive scale.
 
-Combining these technologies opens the door to answering complex questions easier and cheaper than never before - like [Scaling to Build the Consolidated Audit Trail](https://cloud.google.com/bigtable/pdf/ConsolidatedAuditTrail.pdf).
+Combining these technologies opens the door to answering complex questions more easily and cheaply than ever before - e.g., [Scaling to Build the Consolidated Audit Trail](https://cloud.google.com/bigtable/pdf/ConsolidatedAuditTrail.pdf).
 
 ![Pipeline](https://raw.githubusercontent.com/derjust/BigData/master/doc/dataflow.png)
 
-Combining these technologies is the topic of this article using public available data sets.
-As this article is of hands-on nature, more details and a broader, general coverage of the technologies can be found here:
+Using publicly-available datasets, this article will focus on the combination of these technologies.  
+While this article has a more specific focus, more details and a general coverage of the technologies can be found here:
 
 * [Dataflow](https://cloud.google.com/dataflow/what-is-google-cloud-dataflow)
 * [BigQuery](https://cloud.google.com/bigquery/what-is-bigquery)
 * [Bigtable](https://cloud.google.com/bigtable/docs/)
 
-Especially this article shows the tiny specialities we learned while working with the technologies and provide them as "**Hint**s" in this article.
+This article will refer to specific lessons learned while working with these technologies, which will be available for reference in the "**Hint**" sections. 
 
 ## The flow
 
-To demonstrate the various technologies, the following processing will be performed:
+For demonstrative purposes, the following tasks will be performed:
 
-* Take the 114 billion rows of [weather data](https://cloud.google.com/bigquery/sample-tables?hl=en) from NOAA
- * Technically speaking reading from BigQuery into the Dataflow
-* Combine with [static geo data](ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt) for further analysis and...
- * Technically speaking using Dataflows [side input](https://cloud.google.com/dataflow/model/par-do#side-inputs) capabilities
-* ... filter and aggreage the temperature at a given location
- * Technically speaking using Dataflows [Filter](https://cloud.google.com/dataflow/model/transforms) and [Aggregators](https://cloud.google.com/dataflow/java-sdk/JavaDoc/com/google/cloud/dataflow/sdk/transforms/Aggregator).
-* and finally writing to Bigtable and BigQuery for further geo-based analysis
- * Techncially speaking using Bigtable and BigQuery API
+* Take the 114 billion rows of NOAA [weather data](https://cloud.google.com/bigquery/sample-tables?hl=en)...
+ * Reading from BigQuery into the Dataflow
+* Combine them with [static geo data](ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt) for further analysis...
+ * Using Dataflow's [side input](https://cloud.google.com/dataflow/model/par-do#side-inputs) capabilities
+* Filter and aggreage the temperature at a given location...
+ * Using Dataflow's [Filter](https://cloud.google.com/dataflow/model/transforms) and [Aggregators](https://cloud.google.com/dataflow/java-sdk/JavaDoc/com/google/cloud/dataflow/sdk/transforms/Aggregator).
+* And, finally, writing to Bigtable and BigQuery for further geo-based analysis
+ * Using Bigtable and BigQuery API
 
 ## Basic setup
-Setting up an Google Cloud Platform account is all it takes from an infrastructure persepctive.
-
-On the developer side a recent Java developer environment is obviously required:
+Infrastructurally, setting up a Google Cloud Platform account is all it takes.  
+For the developer, an updated Java development environment is obviously required:
 
 * Java 7 or higher
 * Maven 3 - it is left as an exercise for the reader to use Gradle
 
 ### Preparing Cloud services
 
-To execute the Dataflow pipeline we are going to build, we need some minor setup via Google's Cloud Console:
+In order to execute the Dataflow pipeline we are going to build, we will need some minor setup via Google's Cloud Console:
 
 1. Create a Cloud Storage Bucket `noaa` and upload file this file to it: [ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.csv](ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.csv).
 1. Create a Bigtable cluster `noaa-cruncher` - The minimum of 3 nodes is sufficient
 
-Also setup the [HBase shell](https://cloud.google.com/bigtable/docs/hbase-shell-quickstart) and create a table via
+Also, set up the [HBase shell](https://cloud.google.com/bigtable/docs/hbase-shell-quickstart) and create a table via:
 
 ```
 > create 'weather', 'location', 'weather'
 ```
 
-which creates a new table with the column families `location` and `weather`. Details around how to structure those tables can be [read here](https://cloud.google.com/bigtable/docs/schema-design).
+This creates a new table with the column families `location` and `weather`. Details about structuring these tables can be [found here](https://cloud.google.com/bigtable/docs/schema-design).
 
 Finally create a BigQuery dataset `weather` in the [BigQuery UI](https://bigquery.cloud.google.com/).
 
 The rest of the article will outline all the required files. A basic understanding of Java and Maven is assumed.
 
-The whole project is also available at [github.com/SunGard-Labs](https://github.com/SunGard-Labs)
+The whole project is also available for reference at [github.com/SunGard-Labs/Dataflow-Blogpost](https://github.com/derjust/BigData)
 
-## Brining in the big guns
-Starting with a classic `pom.xml` and a Maven-syle project setup is all it takes to get the Google technologies together:
+## Bringing in the big guns
+Starting with a classic `pom.xml` and a Maven-style project setup is all it takes to bring the Google technologies together:
 
-The libraries for Dataflow and Bigtable are still under active development. We are going to use the `LATEST` version to get the latest improvments. The snapshot releases can be found at this repository: [https://oss.sonatype.org/content/repositories/snapshots](https://oss.sonatype.org/content/repositories/snapshots). At the time of writing this is `0.2.2-SNAPSHOT`
+The libraries for Dataflow and Bigtable continue to undergo active development. We are going to use the LATEST version in order to have at our disposal the latest improvements. The snapshot releases can be found at this repository: [https://oss.sonatype.org/content/repositories/snapshots](https://oss.sonatype.org/content/repositories/snapshots). At the time of writing this is `0.2.2-SNAPSHOT`
 
 ```xml
 <properties>
@@ -106,13 +105,13 @@ The libraries for Dataflow and Bigtable are still under active development. We a
 </dependency>
 ```
 
-**Hint:** Dataflow uses [Cloud Logging](https://cloud.google.com/logging/docs/) to log all events. It is highly recommended to use this infrastructure also for the logging of the processing logic itself.
-To do so, `slf4j` must be used (alternative: `commons-logging` is also fine). But it must be ensured, that **neither** `log4j` is available on the classpath (that would confuse the Bigtable logging as it uses `commons-logging`) **nor** be any `slf4j-log4j12` (or other) binding be available for `slf4j`. Only `slf4j-api` is all that is required in your `pom.xml`. The rest is performed/referenced as transitive dependency via the Dataflow dependency.
-Just double-check your (transtiive) dependencies with `mvn dependency:tree` (or your IDE).
+**Hint:** Dataflow uses [Cloud Logging](https://cloud.google.com/logging/docs/) to log all events. It is highly recommended to use this infrastructure also for the logging of the processing logic itself.  
+To do so, slf4j must be used (alternative: `commons-logging` is also fine). But it must be ensured that **neither** `log4j` is available on the classpath (that would confuse the Bigtable logging, as it uses `commons-logging`), **nor** any `slf4j-log4j12` (or other) binding is available for `slf4j`. `slf4j-api` is all that is required in your `pom.xml`. The rest is performed/referenced as a transitive dependency via the Dataflow dependency.  
+Just double-check your (transitive) dependencies with `mvn dependency:tree` (or your IDE).
 
 ## Pipeline skeleton
 
-A Dataflow pipeline starts as a simle java program. Luckily argument parsing comes built-in with the Google libraries:
+A Dataflow pipeline starts as a simple java program. Luckily, argument parsing comes built-in with the Google libraries:
 
 ```java
 package com.sungard.advtech;
@@ -176,7 +175,7 @@ public class CloudyWithMeatballs {
 ## Reading the weather data
 
 Reading the weather data is simple - Google provides the data set as part of their [sample data](https://bigquery.cloud.google.com/table/publicdata:samples.gsod).
-Use the SQL console to verify that queries return the intendet result. Go there and test this query:
+Use the SQL console to verify that queries return the intended result. Go there and test this query:
 
 ```sql
 SELECT wban_number, station_number, year, month, day, mean_temp, min_temperature, max_temperature
@@ -192,18 +191,19 @@ The Dataflow code is as simple as
 PCollection<TableRow> weatherData = p.apply(
     BigQueryIO.Read.named("Read Weather Data")
       .fromQuery("SELECT wban_number, station_number, year, month, day, mean_temp, min_temperature, max_temperature"
-      + " FROM publicdata:samples.gsod where year=2010"));
+      + " FROM publicdata:samples.gsod"));
 ```
 
-which will exeucte the query and return each row as input element into the pipeline.
-For simplicity and performance reasons we will do no fancy object mapping but operate on the Gogole datatypes right away.
-For BigQuery's `TableRow` that means we have a map-style data structure whereas each column name is the key of that map.
+This will execute the query and return each row as an input element into the pipeline.  
+For simplicity and performance reasons we will not engage in any fancy object mapping, but will operate on the Google datatypes right away.  
+For BigQuery's `TableRow`, that means we have a map-style data structure, in which each column name is the key of that map.
+
 
 ## Side input to resolve geo data
-The base concept of Dataflow is to have a single, main `PCollection` of elements flowing through the pipeline. Whereas that is sufficent for a broad range of situations, sometimes it is required to assemble data from various sources or output two streams of data.
+The basic concept of Dataflow is to have a single, main `PCollection` of elements flowing through the pipeline. Whereas that is sufficient for a broad range of situations, sometimes it is required to assemble data from various sources or output two streams of data.
 For [this kind of sitaution](https://cloud.google.com/dataflow/pipelines/design-principles), Dataflow provides [side input/outputs](https://cloud.google.com/dataflow/model/par-do#side-inputs).
 
-To resolve the weather data from above to a location on planet earth, reading the (previously uploaded) station details from the Cloud Storage and using this class to store the details from the CSV file:
+In order to resolve the weather data from above to a location on planet earth, read the (previously uploaded) station details from the Cloud Storage and use this class to store the details from the CSV file:
 
 ```java
 package com.sungard.advtech.data;
@@ -341,7 +341,7 @@ public class ISDHistoryParser extends DoFn<String, KV<String, StationDetails>> {
 }
 ```
 
-and adding this to the pipeline:
+and add this to the pipeline:
 
 ```java
 // Prepare the side input...
@@ -350,14 +350,14 @@ PCollection<KV<String, StationDetails>> isdHistory = p
     .apply(ParDo.named("Parse ISD History").of(new ISDHistoryParser()));
 ```
 
-**Hint:** If an `Exception` is thrown from within `DoFn.processElement(ProcessContext)`, Dataflow retries the offending element from on a different worker. This is nice for connectivity issues to other service and so forth.
-But uncorrectable `Exceptions` (like malformed data) will always fail.
+**Hint:** If an `Exception` is thrown from within `DoFn.processElement(ProcessContext)`, Dataflow retries the offending element on a different worker. This is nice for connectivity issues to other services and so forth.
+But uncorrectable `Exceptions` (such as, malformed data) will always fail.
 If too many elements fail, the whole pipeline is stopped.
 
-**Hint:** Cloud Logging preserves the stacktrace as long as the appropriate method on `Logger` is used. Causeing exessive logging bursts (i.e. due to logging each stack element on its own) should be avoided.
+**Hint:** Cloud Logging preserves the stacktrace as long as the appropriate method on `Logger` is used. Causing excessive logging bursts (i.e. due to logging each stack element on its own) should be avoided.
 
 ## Lookup Logic
-To use the `PCollection` as side input it has to be mapped to a view. As the ISD History contains duplicate items for the same station number, a simple "High Lander"- logic is implemented to resolve to a unique map item [as required by the Dataflow API](https://cloud.google.com/dataflow/java-sdk/JavaDoc/com/google/cloud/dataflow/sdk/transforms/View.AsMap):
+To use the `PCollection` as side input, it has to be mapped to a view to ensure immutability. As the ISD History contains duplicate items for the same station number, a simple "High Lander"- logic is implemented to resolve to a unique map item [as required by the Dataflow API](https://cloud.google.com/dataflow/java-sdk/JavaDoc/com/google/cloud/dataflow/sdk/transforms/View.AsMap):
 
 ```java
 package com.sungard.advtech;
@@ -396,7 +396,7 @@ public class HighlanderCombineFn extends CombineFn<StationDetails, StationDetail
     }
 }
 ```
-and using it in the pipeline via
+and is used in the pipeline via
 
 ```java
 // ... and make it available as view
@@ -486,8 +486,8 @@ public class WeatherAtStation extends StationDetails implements java.io.Serializ
 }
 ```
 
-For basic statistics also an summary aggregator is added. It is increased every time a station can't be found for a weather point.
-This might be because the station number is unknown or the number belong to a station which couldn't be parsed earlier (i.e. no geo data):
+For basic statistics, a summary aggregator is also added. It is increased every time a station can't be found for a weather point.  
+This might be because the station number is unknown, or the number might belong to a station which couldn't be parsed earlier (i.e. no geodata):
 
 ```java
 package com.sungard.advtech;
@@ -506,7 +506,7 @@ import com.sungard.advtech.data.StationDetails;
 import com.sungard.advtech.data.WeatherAtStation;
 
 /**
- * Maps a input {@link TableRow} of the sampel weather data to a {link WeatherAtStation}
+ * Maps a input {@link TableRow} of the sample weather data to a {link WeatherAtStation}
  * using the side input of {@link StationDetails} generated by {@link com.sungard.advtech.ISDHistoryParser}.
  */
 public class WeatherDataEnricher extends DoFn<TableRow, WeatherAtStation> {
@@ -548,7 +548,7 @@ public class WeatherDataEnricher extends DoFn<TableRow, WeatherAtStation> {
 }
 ```
 
-which is added to the pipeline, next to its side input:
+This is added to the pipeline, next to its side input:
 
 ```java
 // Enrich the weather data with geo data via side input
@@ -557,12 +557,12 @@ PCollection<WeatherAtStation> weatherWithStation = weatherData.apply(
         .withSideInputs(isdHistoryView).of(new WeatherDataEnricher(isdHistoryView)));
 ```
 
-**Hint:** Side inputs are immutable and are kept in memory of each worker. Therefore they are a perfect fit for simple lookup data structures.
+**Hint:** Side inputs are immutable and are stored in the memory of each worker. They are therefore a perfect fit for simple lookup data structures.
 
-## Filtering and more Aggregating Logic
-Filtering is a powerful tool within Dataflow. The SDK comes with a bunch of pre-definied comparison functions for numbers.
+## Filtering and additional Aggregating Logic
+Filtering is a powerful tool within Dataflow. The SDK comes with a various predefined comparison functions for numbers.
 
-As we want to filter for weather around New York, a custom filter is needed:
+Since we want to filter for weather around New York, a custom filter is needed:
 
 ```java
 package com.sungard.advtech;
@@ -604,7 +604,7 @@ PCollection<WeatherAtStation> weatherInNewNewYork = weatherWithStation.apply(
 ```
 
 ## Output Logic 1 - Only Aggregators
-For the New York weather, the minimum and maximum temperatur is just aggregator using Min and Max aggregators:
+For the New York weather, the minimum and maximum temperature is simply aggregated using Min and Max aggregators:
 
 ```java
 package com.sungard.advtech;
@@ -637,7 +637,7 @@ public class MinMaxAggregators extends DoFn<WeatherAtStation, Void> {
 }
 ```
 
-Writing to (i.e.) GCS is left as an exercise for the reader. For the moment it is just added to the pipeline as it is:
+Writing to (for example) GCS is left as an exercise for the reader. For the moment it is just added to the pipeline as is:
 
 ```java
 // ... and aggreagte min/max temperatur
@@ -646,7 +646,7 @@ weatherInNewNewYork.apply(ParDo.named("Find min-max temperatur in New York")
 ```
 
 ## Output Logic 2 - Side outputs
-Side outputs are the opposite of side inputs and allow that a step within a pipeline has multiple outputs:
+Side outputs are the opposite of side inputs and allow a step within a pipeline to have multiple outputs:
 
 ```java
 package com.sungard.advtech;
@@ -724,7 +724,7 @@ public class OutputCreator extends DoFn<WeatherAtStation, Mutation> {
         fields.add(new TableFieldSchema().setName("year").setType("INTEGER"));
         fields.add(new TableFieldSchema().setName("month").setType("INTEGER"));
         fields.add(new TableFieldSchema().setName("day").setType("INTEGER"));
-        fields.add(new TableFieldSchema().setName("meanTemp").setType("DOUBLE"));
+        fields.add(new TableFieldSchema().setName("meanTemp").setType("FLOAT"));
 
         TableSchema schema = new TableSchema();
         schema.setFields(fields);
@@ -735,7 +735,8 @@ public class OutputCreator extends DoFn<WeatherAtStation, Mutation> {
 ```
 
 and is added as the final processing piece to the pipeline:
-**Hint:** As all data should be stored, `weatherAtStation` is used again - it was also used for the New York filtering but within Dataflow it is absolutly fine to reuse `PCollection`s
+
+**Hint:** As all the data should be stored, `weatherAtStation` is used again - it was also used for the New York filtering but within Dataflow it is absolutely fine to reuse `PCollection`s
 
 ```java
 // Create tuples as anonymous classes for side outputs
@@ -752,18 +753,17 @@ combinedOutput.get(bigQueryOutput).setCoder(TableRowJsonCoder.of());
 combinedOutput.get(bigTableOutput).setCoder(new HBaseMutationCoder());
 ```
 
-**Hint:** Due to Java's type erasuer, for side outputs two things must be considered:
+**Hint:** Due to Java's type eraser, for side outputs two things must be considered:
 
-1. The `TagTuple` must be used as annonymous class.
-1. Depending on the type in the output, it might be required to register appropriate Coders on the output. Dataflow might not be able to interfier the type during the pipeline validation. For datatypes from the Google ecosystem, there exist already the matching coders in `com.google.cloud.dataflow.sdk.coders` and `com.google.cloud.bigtable.dataflow`.
+1. The `TagTuple` must be used as an anonymous class.
+1. Depending on the type in the output, it might be required to register appropriate Coders on the output. Dataflow might not be able to interfere with the type during the pipeline validation. For datatypes from the Google ecosystem, matching coders already exist in `com.google.cloud.dataflow.sdk.coders` and `com.google.cloud.bigtable.dataflow`.
 
 ## Write Logic 1 - Bigtable
-Writng to Bigtable should be done via the provided classes of the SDK.
+Writing to Bigtable should be done via the provided classes of the SDK.
 
-It is possible to use the HBase API also within Dataflow, but this requires that your code handles the connection managment. Due to the asynchronous nature of the gRPC protocol used underneath this should be avoided if not required:
+It is also possible to use the HBase API within Dataflow, but this requires that your code can handle the connection management. Due to the asynchronous nature of the gRPC protocol used below, this should be avoided if it is not required:
 
-Which table should be written to will be provided via command line arguments.
-The table iteslf was created during the [basic setup](#basic-setup)
+The table that should be written to will be provided via the command line arguments. The table itself was created during the [basic setup](#basic-setup)
 
 ```java
 // Write the main output to Bigtable
@@ -772,7 +772,7 @@ combinedOutput.get(bigTableOutput).apply(
 ```
 
 ## Write Logic 2 - BigQuery
-Writing to BigQuery is also supported via SDK-boundled classes.
+Writing to BigQuery is also supported via SDK-bundled classes.
 The schema can be created as needed. For this example the table is always re-created when the pipeline is executed.
 
 ```java
@@ -787,8 +787,8 @@ combinedOutput.get(bigQueryOutput).apply(BigQueryIO.Write.named("Write to BigQue
 **Hint:** Keep in mind that BigQuery tables are immutable!
 
 ## Testing the Pipes
-For testing, Dataflow provides [several classes to support unit testing](https://cloud.google.com/dataflow/pipelines/testing-your-pipeline) the various pieces of a pipeline.
-As an example, the `OutputCreator` is tested as it covers most of it - using classic JUnit/Hamcrest testing style:
+For testing, Dataflow provides [several classes to support unit testing](https://cloud.google.com/dataflow/pipelines/testing-your-pipeline) of the various pieces of a pipeline.
+As an example, the `OutputCreator` is tested - as it accounts for most of the Dataflow API usage - using the classic JUnit/Hamcrest testing style:
 
 ```xml
 <dependency>
@@ -805,7 +805,7 @@ As an example, the `OutputCreator` is tested as it covers most of it - using cla
 </dependency>
 ```
 
-Combining the test classes provided by the SDK with the JUnit annotaitons
+Combining the test classes provided by the SDK with the JUnit annotations
 
 ```java
 package com.sungard.advtech;
@@ -945,7 +945,7 @@ public class ISDHistoryParserTest {
 }
 ```
 
-**Hint:** It should be ensured that no anonymous classes are used but static inner classes. Otherwise execution of the `TestPipeline` will cause serialization excetpions.
+**Hint:** It should be ensured that no anonymous classes but static inner classes are used. Otherwise execution of the `TestPipeline` will cause serialization exceptions.
 
 The test cases can be run via the classic
 ```
@@ -953,9 +953,9 @@ mvn test
 ```
 
 ## Running it
-To exeucte the pipeline, the java program has to be executed.
-When Dataflow starts, some parts are validated. This includes to check for the existence of the Bigtable table. The communication is done requires ALPN on the *boot* classpath. Details can be found [here](http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html).
-To achieve this, a non-invasive approach is to add profiles to the `pom.xml` to load the correct ALPN version:
+To execute the pipeline, the java program has to be executed.
+When Dataflow starts, some parts are validated. This includes checking for the existence of the Bigtable table. The communication requires ALPN on the *boot* classpath. Details can be found [here](http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html).
+To achieve this, a non-invasive approach is to add profiles to the `pom.xml` in order to load the correct ALPN version:
 
 ```xml
 <dependencies>
@@ -1036,7 +1036,7 @@ To achieve this, a non-invasive approach is to add profiles to the `pom.xml` to 
 </profiles>
 ```
 
-To allow easier replication of execution runs, the Maven plugin `exec` is added to the `pom.xml`.
+To allow for the easier replication of execution runs, the Maven plugin `exec` is added to the `pom.xml`.
 
 Dataflow allows a lot of customization, the following settings are used for this run:
 
@@ -1071,7 +1071,7 @@ Dataflow allows a lot of customization, the following settings are used for this
 </properties>
 ```
 
-**Hint:** The Dataflow require the regular GCP resources for IPs, Disk and CPU. If the quota is reached, the autoscaling does not take place but also no warning is logged.
+**Hint:** The Dataflow require the regular GCP resources for IPs, Disk and CPU. If the quota is reached, the autoscaling does not take place, but no warning is logged.
 
 ```xml
 <plugin>
@@ -1107,7 +1107,7 @@ Dataflow allows a lot of customization, the following settings are used for this
 </plugin>
 ```
 
-and run via
+and run this via
 ```
 mvn clean compile exec:exec
 ```

@@ -60,7 +60,7 @@ public class CloudyWithMeatballs {
         PCollection<TableRow> weatherData = p.apply(
             BigQueryIO.Read.named("Read Weather Data")
               .fromQuery("SELECT wban_number, station_number, year, month, day, mean_temp, min_temperature, max_temperature"
-              + " FROM publicdata:samples.gsod where year=2010"));
+              + " FROM publicdata:samples.gsod"));
 
         // Enrich the weather data with geo data via side input
         PCollection<WeatherAtStation> weatherWithStation = weatherData.apply(

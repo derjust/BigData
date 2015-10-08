@@ -73,7 +73,7 @@ public class OutputCreator extends DoFn<WeatherAtStation, Mutation> {
         fields.add(new TableFieldSchema().setName("year").setType("INTEGER"));
         fields.add(new TableFieldSchema().setName("month").setType("INTEGER"));
         fields.add(new TableFieldSchema().setName("day").setType("INTEGER"));
-        fields.add(new TableFieldSchema().setName("meanTemp").setType("DOUBLE"));
+        fields.add(new TableFieldSchema().setName("meanTemp").setType("FLOAT"));
 
         TableSchema schema = new TableSchema();
         schema.setFields(fields);
